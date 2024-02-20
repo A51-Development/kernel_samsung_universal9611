@@ -139,7 +139,7 @@ config USB_OLD_CONFIGFS
 	depends on USB_CONFIGFS
 	default n
 	help
-	   It supports old style configfs
+	  It supports old style configfs
 
 config USB_G_ANDROID
 	bool "Android Composite Gadget"

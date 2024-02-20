@@ -3508,7 +3508,9 @@ static void ffs_func_unbind(struct usb_configuration *c,
 static struct usb_function *ffs_alloc(struct usb_function_instance *fi)
 {
 	struct ffs_function *func;
+#ifdef CONFIG_USB_OLD_CONFIGFS
 	struct ffs_dev *dev;
+#endif
 
 	ENTER();
 
@@ -3516,8 +3518,12 @@ static struct usb_function *ffs_alloc(struct usb_function_instance *fi)
 	if (unlikely(!func))
 		return ERR_PTR(-ENOMEM);
 
+#ifdef CONFIG_USB_OLD_CONFIGFS
 	dev = to_f_fs_opts(fi)->dev;
 	func->function.name    = dev->name;
+#else
+	func->function.name    = "Function FS Gadget";
+#endif
 
 	func->function.bind    = ffs_func_bind;
 	func->function.unbind  = ffs_func_unbind;
