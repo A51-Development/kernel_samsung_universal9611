@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
- * (C) COPYRIGHT 2018-2021 ARM Limited. All rights reserved.
+ * (C) COPYRIGHT 2018-2023 ARM Limited. All rights reserved.
  *
  * This program is free software and is provided to you under the terms of the
  * GNU General Public License version 2 as published by the Free Software
@@ -1289,7 +1289,7 @@ int kbase_csf_firmware_mcu_shared_mapping_init(
 
 	ret = kbase_mem_pool_alloc_pages(
 		&kbdev->mem_pools.small[KBASE_MEM_GROUP_CSF_FW],
-		num_pages, phys, false);
+		num_pages, phys, false, NULL);
 	if (ret <= 0)
 		goto phys_mem_pool_alloc_error;
 

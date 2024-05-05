@@ -119,6 +119,8 @@
  * 11.31:
  * - Added BASE_JD_REQ_LIMITED_CORE_MASK.
  * - Added ioctl 55: set_limited_core_count.
+ * 11.38:
+ * - CPU mappings of USER_BUFFER imported memory handles must be cached.
  */
 #define BASE_UK_VERSION_MAJOR 11
 #define BASE_UK_VERSION_MINOR 31

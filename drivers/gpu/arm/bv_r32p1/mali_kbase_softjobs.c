@@ -27,7 +27,7 @@
 #include <mali_kbase_sync.h>
 #endif
 #include <linux/dma-mapping.h>
-#include <uapi/gpu/arm/midgard/mali_base_kernel.h>
+#include <uapi/gpu/arm/bv_r32p1/mali_base_kernel.h>
 #include <mali_kbase_hwaccess_time.h>
 #include <mali_kbase_kinstr_jm.h>
 #include <mali_kbase_mem_linux.h>
@@ -96,7 +96,8 @@ static int kbasep_read_soft_event_status(
 	unsigned char *mapped_evt;
 	struct kbase_vmap_struct map;
 
-	mapped_evt = kbase_vmap(kctx, evt, sizeof(*mapped_evt), &map);
+	mapped_evt = kbase_vmap_prot(kctx, evt, sizeof(*mapped_evt),
+				     KBASE_REG_CPU_RD, &map);
 	if (!mapped_evt)
 		return -EFAULT;
 
@@ -117,7 +118,8 @@ static int kbasep_write_soft_event_status(
 	    (new_status != BASE_JD_SOFT_EVENT_RESET))
 		return -EINVAL;
 
-	mapped_evt = kbase_vmap(kctx, evt, sizeof(*mapped_evt), &map);
+	mapped_evt = kbase_vmap_prot(kctx, evt, sizeof(*mapped_evt),
+				     KBASE_REG_CPU_WR, &map);
 	if (!mapped_evt)
 		return -EFAULT;
 
@@ -501,6 +503,7 @@ static void kbasep_soft_event_cancel_job(struct kbase_jd_atom *katom)
 		kbase_js_sched_all(katom->kctx->kbdev);
 }
 
+#if IS_ENABLED(CONFIG_MALI_VECTOR_DUMP) || MALI_UNIT_TEST
 static void kbase_debug_copy_finish(struct kbase_jd_atom *katom)
 {
 	struct kbase_debug_copy_buffer *buffers = katom->softjob_data;
@@ -727,7 +730,6 @@ out_cleanup:
 
 	return ret;
 }
-#endif /* !MALI_USE_CSF */
 
 #if KERNEL_VERSION(5, 6, 0) <= LINUX_VERSION_CODE
 static void *dma_buf_kmap_page(struct kbase_mem_phy_alloc *gpu_alloc,
@@ -759,8 +761,18 @@ static void *dma_buf_kmap_page(struct kbase_mem_phy_alloc *gpu_alloc,
 }
 #endif
 
-int kbase_mem_copy_from_extres(struct kbase_context *kctx,
-		struct kbase_debug_copy_buffer *buf_data)
+/**
+ * kbase_mem_copy_from_extres() - Copy from external resources.
+ *
+ * @kctx:	kbase context within which the copying is to take place.
+ * @buf_data:	Pointer to the information about external resources:
+ *		pages pertaining to the external resource, number of
+ *		pages to copy.
+ *
+ * Return:      0 on success, error code otherwise.
+ */
+static int kbase_mem_copy_from_extres(struct kbase_context *kctx,
+				      struct kbase_debug_copy_buffer *buf_data)
 {
 	unsigned int i;
 	unsigned int target_page_nr = 0;
@@ -855,7 +867,6 @@ out_unlock:
 	return ret;
 }
 
-#if !MALI_USE_CSF
 static int kbase_debug_copy(struct kbase_jd_atom *katom)
 {
 	struct kbase_debug_copy_buffer *buffers = katom->softjob_data;
@@ -873,6 +884,7 @@ static int kbase_debug_copy(struct kbase_jd_atom *katom)
 
 	return 0;
 }
+#endif /* IS_ENABLED(CONFIG_MALI_VECTOR_DUMP) || MALI_UNIT_TEST */
 #endif /* !MALI_USE_CSF */
 
 #define KBASEP_JIT_ALLOC_GPU_ADDR_ALIGNMENT ((u32)0x7)
@@ -968,6 +980,13 @@ static int kbase_jit_allocate_prepare(struct kbase_jd_atom *katom)
 	jit_info_user_copy_size =
 			jit_info_copy_size_for_jit_version[kctx->jit_version];
 	WARN_ON(jit_info_user_copy_size > sizeof(*info));
+
+	if (!kbase_mem_allow_alloc(kctx)) {
+		dev_dbg(kbdev->dev, "Invalid attempt to allocate JIT memory by %s/%d for ctx %d_%d",
+			current->comm, current->pid, kctx->tgid, kctx->id);
+		ret = -EINVAL;
+		goto fail;
+	}
 
 	/* For backwards compatibility, and to prevent reading more than 1 jit
 	 * info struct on jit version 1
@@ -1204,8 +1223,8 @@ static int kbase_jit_allocate_process(struct kbase_jd_atom *katom)
 		 * Write the address of the JIT allocation to the user provided
 		 * GPU allocation.
 		 */
-		ptr = kbase_vmap(kctx, info->gpu_alloc_addr, sizeof(*ptr),
-				&mapping);
+		ptr = kbase_vmap_prot(kctx, info->gpu_alloc_addr, sizeof(*ptr),
+				KBASE_REG_CPU_WR, &mapping);
 		if (!ptr) {
 			/*
 			 * Leave the allocations "live" as the JIT free atom
@@ -1484,10 +1503,11 @@ static void kbase_ext_res_process(struct kbase_jd_atom *katom, bool map)
 			if (!kbase_sticky_resource_acquire(katom->kctx,
 					gpu_addr))
 				goto failed_loop;
-		} else
+		} else {
 			if (!kbase_sticky_resource_release_force(katom->kctx, NULL,
 					gpu_addr))
 				failed = true;
+		}
 	}
 
 	/*
@@ -1576,6 +1596,7 @@ int kbase_process_soft_job(struct kbase_jd_atom *katom)
 	case BASE_JD_REQ_SOFT_EVENT_RESET:
 		kbasep_soft_event_update_locked(katom, BASE_JD_SOFT_EVENT_RESET);
 		break;
+#if IS_ENABLED(CONFIG_MALI_VECTOR_DUMP) || MALI_UNIT_TEST
 	case BASE_JD_REQ_SOFT_DEBUG_COPY:
 	{
 		int res = kbase_debug_copy(katom);
@@ -1584,6 +1605,7 @@ int kbase_process_soft_job(struct kbase_jd_atom *katom)
 			katom->event_code = BASE_JD_EVENT_JOB_INVALID;
 		break;
 	}
+#endif /* IS_ENABLED(CONFIG_MALI_VECTOR_DUMP) || MALI_UNIT_TEST */
 	case BASE_JD_REQ_SOFT_JIT_ALLOC:
 		ret = kbase_jit_allocate_process(katom);
 		break;
@@ -1695,8 +1717,10 @@ int kbase_prepare_soft_job(struct kbase_jd_atom *katom)
 		if (katom->jc == 0)
 			return -EINVAL;
 		break;
+#if IS_ENABLED(CONFIG_MALI_VECTOR_DUMP) || MALI_UNIT_TEST
 	case BASE_JD_REQ_SOFT_DEBUG_COPY:
 		return kbase_debug_copy_prepare(katom);
+#endif /* IS_ENABLED(CONFIG_MALI_VECTOR_DUMP) || MALI_UNIT_TEST */
 	case BASE_JD_REQ_SOFT_EXT_RES_MAP:
 		return kbase_ext_res_prepare(katom);
 	case BASE_JD_REQ_SOFT_EXT_RES_UNMAP:
@@ -1736,9 +1760,11 @@ void kbase_finish_soft_job(struct kbase_jd_atom *katom)
 
 		break;
 #endif /* CONFIG_SYNC || CONFIG_SYNC_FILE */
+#if IS_ENABLED(CONFIG_MALI_VECTOR_DUMP) || MALI_UNIT_TEST
 	case BASE_JD_REQ_SOFT_DEBUG_COPY:
 		kbase_debug_copy_finish(katom);
 		break;
+#endif /* IS_ENABLED(CONFIG_MALI_VECTOR_DUMP) || MALI_UNIT_TEST */
 	case BASE_JD_REQ_SOFT_JIT_ALLOC:
 		kbase_jit_allocate_finish(katom);
 		break;

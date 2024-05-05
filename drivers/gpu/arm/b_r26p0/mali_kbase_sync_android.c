@@ -263,12 +263,14 @@ int kbase_sync_fence_out_create(struct kbase_jd_atom *katom, int tl_fd)
 	fd = get_unused_fd_flags(O_RDWR | O_CLOEXEC);
 	if (fd < 0) {
 		sync_fence_put(fence);
+		katom->fence = NULL;
 		goto out;
 	}
 #else
 	fd = get_unused_fd();
 	if (fd < 0) {
 		sync_fence_put(fence);
+		katom->fence = NULL;
 		goto out;
 	}
 
@@ -283,13 +285,18 @@ int kbase_sync_fence_out_create(struct kbase_jd_atom *katom, int tl_fd)
 	spin_unlock(&files->file_lock);
 #endif  /* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 7, 0) */
 
+	/* Take an extra reference count on the created fence file */
+	get_file(fence->file);
 	/* bind fence to the new fd */
 	sync_fence_install(fence, fd);
-
 	katom->fence = sync_fence_fdget(fd);
-	if (katom->fence == NULL) {
-		/* The only way the fence can be NULL is if userspace closed it
-		 * for us, so we don't need to clear it up */
+	/* Drop the extra reference count */
+	fput(fence->file);
+
+	if (katom->fence != fence) {
+		if (katom->fence)
+			sync_fence_put(katom->fence);
+		katom->fence = NULL;
 		fd = -EINVAL;
 		goto out;
 	}

@@ -356,6 +356,14 @@ static int kbase_kcpu_jit_allocate_prepare(
 
 	lockdep_assert_held(&kctx->csf.kcpu_queues.lock);
 
+	if (!kbase_mem_allow_alloc(kctx)) {
+		dev_dbg(kctx->kbdev->dev,
+			"Invalid attempt to allocate JIT memory by %s/%d for ctx %d_%d",
+			current->comm, current->pid, kctx->tgid, kctx->id);
+		ret = -EINVAL;
+		goto out;
+	}
+
 	if (!data || count > kcpu_queue->kctx->jit_max_allocations ||
 			count > ARRAY_SIZE(kctx->jit_alloc)) {
 		ret = -EINVAL;

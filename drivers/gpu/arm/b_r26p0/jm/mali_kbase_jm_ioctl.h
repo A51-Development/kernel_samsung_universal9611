@@ -1,6 +1,6 @@
 /*
  *
- * (C) COPYRIGHT 2020 ARM Limited. All rights reserved.
+ * (C) COPYRIGHT 2020-2023 ARM Limited. All rights reserved.
  *
  * This program is free software and is provided to you under the terms of the
  * GNU General Public License version 2 as published by the Free Software
@@ -109,10 +109,12 @@
  * 11.26
  * - Added kinstr_jm API
  * 11.27
- * - Backwards compatible extension to HWC ioctl.
- */
+ * Backwards compatible extension to HWC ioctl.
+ * - Relax the requirement to create a mapping with BASE_MEM_MAP_TRACKING_HANDLE
+ *   before allocating GPU memory for the context.
+*/
 #define BASE_UK_VERSION_MAJOR 11
-#define BASE_UK_VERSION_MINOR 27
+#define BASE_UK_VERSION_MINOR 38
 
 /**
  * struct kbase_ioctl_job_submit - Submit jobs/atoms to the kernel

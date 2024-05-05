@@ -724,6 +724,8 @@ void kbasep_js_kctx_term(struct kbase_context *kctx)
 		kbase_backend_ctx_count_changed(kbdev);
 		mutex_unlock(&kbdev->js_data.runpool_mutex);
 	}
+
+	kbase_ctx_sched_remove_ctx(kctx);
 }
 
 /*
@@ -4039,4 +4041,3 @@ base_jd_prio kbase_js_priority_check(struct kbase_device *kbdev, base_jd_prio pr
 									    req_priority);
 	return kbasep_js_sched_prio_to_atom_prio(kbdev, out_priority);
 }
-

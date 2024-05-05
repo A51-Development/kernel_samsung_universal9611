@@ -143,4 +143,6 @@ void kbase_timeline_test(
 void kbase_timeline_stats(struct kbase_timeline *timeline, u32 *bytes_collected, u32 *bytes_generated);
 #endif /* MALI_UNIT_TEST */
 
+bool timeline_is_permitted(void);
+
 #endif /* _KBASE_TIMELINE_H */

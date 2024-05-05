@@ -127,6 +127,8 @@
  * - First release of new HW performance counters interface.
  * 11.35:
  * - Dummy model (no mali) backend will now clear HWC values after each sample
+ * 11.38:
+ * - CPU mappings of USER_BUFFER imported memory handles must be cached.
  */
 #define BASE_UK_VERSION_MAJOR 11
 #define BASE_UK_VERSION_MINOR 35

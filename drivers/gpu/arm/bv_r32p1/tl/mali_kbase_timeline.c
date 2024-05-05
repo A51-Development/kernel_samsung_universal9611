@@ -192,6 +192,8 @@ int kbase_timeline_io_acquire(struct kbase_device *kbdev, u32 flags)
 
 	if (!atomic_cmpxchg(timeline->timeline_flags, 0, timeline_flags)) {
 		int rcode;
+	if (!timeline_is_permitted())
+		return -EPERM;
 
 #if MALI_USE_CSF
 		if (flags & BASE_TLSTREAM_ENABLE_CSFFW_TRACEPOINTS) {
