@@ -21,7 +21,7 @@ fi
 
 rm -rf out
 
-COMMON_FLAGS=" CROSS_COMPILE=aarch64-linux-gnu- CC=clang LD=ld.lld AS=llvm-as AR=llvm-ar OBJDUMP=llvm-objdump READELF=llvm-readelf -j$(nproc)"
+COMMON_FLAGS=" CROSS_COMPILE=aarch64-linux-gnu- CC=clang LD=ld.lld AS=llvm-as AR=llvm-ar OBJDUMP=llvm-objdump READELF=llvm-readelf NM=llvm-nm OBJCOPY=llvm-objcopy -j$(nproc)"
 
 make O=out $COMMON_FLAGS vendor/${DEVICE}_defconfig vendor/grass.config vendor/${DEVICE}.config vendor/ksu.config $CONFIG_AOSP
 make O=out $COMMON_FLAGS ${FLAGS} -j$(nproc)
