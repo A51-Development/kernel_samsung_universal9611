@@ -375,6 +375,7 @@ static void ion_dma_buf_kunmap(struct dma_buf *dmabuf, unsigned long offset,
 		ion_buffer_kmap_put(buffer);
 		mutex_unlock(&buffer->lock);
 	}
+
 }
 
 static void *ion_dma_buf_vmap(struct dma_buf *dmabuf)

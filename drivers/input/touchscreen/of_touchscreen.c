@@ -81,7 +81,7 @@ void touchscreen_parse_properties(struct input_dev *input, bool multitouch,
 								  axis) + 1,
 						&maximum) ||
 		       touchscreen_get_prop_u32(dev, "touchscreen-fuzz-x",
-						input_abs_get_fuzz(input, axis),
+				       		input_abs_get_fuzz(input, axis),
 						&fuzz);
 	if (data_present)
 		touchscreen_set_params(input, axis, maximum - 1, fuzz);
