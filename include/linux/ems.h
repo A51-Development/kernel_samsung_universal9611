@@ -15,6 +15,8 @@
 #include <linux/sched/idle.h>
 #include <linux/sched/topology.h>
 
+struct rq;
+
 struct gb_qos_request {
 	struct plist_node node;
 	char *name;
@@ -50,6 +52,10 @@ extern int exynos_need_active_balance(enum cpu_idle_type idle,
 /* wakeup balance */
 extern int
 exynos_wakeup_balance(struct task_struct *p, int prev_cpu, int sd_flag, int sync);
+extern void update_last_waked_ns_task(struct task_struct *p);
+
+/* load balance */
+extern int frt_idle_pull_tasks(struct rq *dst_rq);
 
 /* ontime migration */
 extern void ontime_migration(void);
@@ -86,6 +92,12 @@ exynos_wakeup_balance(struct task_struct *p, int prev_cpu, int sd_flag, int sync
 	return -1;
 }
 
+static inline void update_last_waked_ns_task(struct task_struct *p) { }
+static inline int
+frt_idle_pull_tasks(struct rq *dst_rq)
+{
+	return -1;
+}
 static inline void ontime_migration(void) { }
 static inline int ontime_can_migration(struct task_struct *p, int cpu)
 {

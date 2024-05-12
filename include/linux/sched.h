@@ -725,6 +725,7 @@ struct task_struct {
 #endif
 #ifdef CONFIG_SCHED_USE_FLUID_RT
 	int victim_flag;
+	u64 last_waked_ns;
 #endif
 
 #ifdef CONFIG_SCHED_EMS

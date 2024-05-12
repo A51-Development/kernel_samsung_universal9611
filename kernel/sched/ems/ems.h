@@ -10,7 +10,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-
 #include "../sched-pelt.h"
 
 #define cpu_selected(cpu)	(cpu >= 0)
@@ -26,6 +25,7 @@ extern int global_boosted(void);
 extern int select_energy_cpu(struct task_struct *p, int prev_cpu, int sd_flag, int sync);
 extern unsigned int calculate_energy(struct task_struct *p, int target_cpu);
 extern int band_play_cpu(struct task_struct *p);
+extern int ontime_can_migration(struct task_struct *p, int dst_cpu);
 
 #ifdef CONFIG_SCHED_TUNE
 extern int prefer_perf_cpu(struct task_struct *p);

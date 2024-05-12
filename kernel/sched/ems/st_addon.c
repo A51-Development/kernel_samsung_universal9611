@@ -10,9 +10,9 @@
 #include <linux/ems.h>
 #include <trace/events/ems.h>
 
-#include "ems.h"
 #include "../sched.h"
 #include "../tune.h"
+#include "ems.h"
 
 /**********************************************************************
  *                            Prefer Perf                             *

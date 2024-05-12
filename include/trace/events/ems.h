@@ -15,6 +15,134 @@
 #include <linux/sched.h>
 #include <linux/tracepoint.h>
 
+TRACE_EVENT(lb_cpu_util,
+
+	TP_PROTO(int cpu, char *label),
+
+	TP_ARGS(cpu, label),
+
+	TP_STRUCT__entry(
+		__field( int,           cpu                     )
+		__field( int,           active_balance          )
+		__field( int,           idle            )
+		__field( int,           nr_running                      )
+		__field( int,           cfs_nr_running          )
+		__field( unsigned long,         cpu_util                )
+		__field( unsigned long,         capacity_orig           )
+		__array( char,          label,  64              )
+		),
+
+	TP_fast_assign(
+		__entry->cpu                    = cpu;
+		__entry->active_balance         = cpu_rq(cpu)->active_balance;
+		__entry->idle           	= idle_cpu(cpu);
+		__entry->nr_running             = cpu_rq(cpu)->nr_running;
+		__entry->cfs_nr_running         = cpu_rq(cpu)->cfs.h_nr_running;
+		__entry->cpu_util               = cpu_util(cpu);
+		__entry->capacity_orig          = capacity_orig_of(cpu);
+		strncpy(__entry->label, label, 63);
+		),
+
+	TP_printk("cpu=%d ab=%d idle=%d nr_running=%d cfs_nr_running=%d cpu_util=%lu capacity=%lu reason=%s",
+			__entry->cpu, __entry->active_balance, __entry->idle, __entry->nr_running,
+			__entry->cfs_nr_running, __entry->cpu_util, __entry->capacity_orig, __entry->label)
+);
+
+TRACE_EVENT(lb_newidle_balance,
+
+	TP_PROTO(int this_cpu, int busy_cpu, int pulled, bool short_idle),
+
+	TP_ARGS(this_cpu, busy_cpu, pulled, short_idle),
+
+	TP_STRUCT__entry(
+		__field(int, cpu)
+		__field(int, busy_cpu)
+		__field(int, pulled)
+		__field(unsigned int, nr_running)
+		__field(unsigned int, rt_nr_running)
+		__field(int, nr_iowait)
+		__field(u64, avg_idle)
+		__field(bool, short_idle)
+		__field(int, overload)
+	),
+
+	TP_fast_assign(
+		__entry->cpu        = this_cpu;
+		__entry->busy_cpu   = busy_cpu;
+		__entry->pulled     = pulled;
+		__entry->nr_running = cpu_rq(this_cpu)->nr_running;
+		__entry->rt_nr_running = cpu_rq(this_cpu)->rt.rt_nr_running;
+		__entry->nr_iowait  = atomic_read(&(cpu_rq(this_cpu)->nr_iowait));
+		__entry->avg_idle   = cpu_rq(this_cpu)->avg_idle;
+		__entry->short_idle = short_idle;
+		__entry->overload   = cpu_rq(this_cpu)->rd->overload;
+	),
+
+	TP_printk("cpu=%d busy_cpu=%d pulled=%d nr_run=%u rt_nr_run=%u nr_iowait=%d avg_idle=%llu short_idle=%d overload=%d",
+		__entry->cpu, __entry->busy_cpu, __entry->pulled,
+		__entry->nr_running, __entry->rt_nr_running,
+		__entry->nr_iowait, __entry->avg_idle,
+		__entry->short_idle, __entry->overload)
+);
+
+TRACE_EVENT(lb_active_migration,
+
+	TP_PROTO(struct task_struct *p, int prev_cpu, int new_cpu, char *label),
+
+	TP_ARGS(p, prev_cpu, new_cpu, label),
+
+	TP_STRUCT__entry(
+		__array( char,		comm,	TASK_COMM_LEN	)
+		__field( pid_t,		pid			)
+		__field( u64,		misfit			)
+		__field( u64,		util			)
+		__field( int,		prev_cpu			)
+		__field( int,		new_cpu		)
+		__array( char,		label,	64		)
+	),
+
+	TP_fast_assign(
+		memcpy(__entry->comm, p->comm, TASK_COMM_LEN);
+		__entry->pid		= p->pid;
+		__entry->util			= task_util(p);
+		__entry->prev_cpu		= prev_cpu;
+		__entry->new_cpu		= new_cpu;
+		strncpy(__entry->label, label, 63);
+	),
+
+	TP_printk("comm=%s pid=%d util=%llu prev_cpu=%d new_cpu=%d reason=%s",
+		__entry->comm, __entry->pid, __entry->util,
+		 __entry->prev_cpu, __entry->new_cpu, __entry->label)
+);
+
+TRACE_EVENT(lb_can_migrate_task,
+
+	TP_PROTO(struct task_struct *tsk, int dst_cpu, int migrate, char *label),
+
+	TP_ARGS(tsk, dst_cpu, migrate, label),
+
+	TP_STRUCT__entry(
+		__array( char,		comm,	TASK_COMM_LEN	)
+		__field( pid_t,		pid			)
+		__field( int,		src_cpu			)
+		__field( int,		dst_cpu			)
+		__field( int,		migrate			)
+		__array( char,		label,	64		)
+	),
+
+	TP_fast_assign(
+		memcpy(__entry->comm, tsk->comm, TASK_COMM_LEN);
+		__entry->pid			= tsk->pid;
+		__entry->src_cpu		= task_cpu(tsk);
+		__entry->dst_cpu		= dst_cpu;
+		__entry->migrate		= migrate;
+		strncpy(__entry->label, label, 63);
+	),
+
+	TP_printk("comm=%s pid=%d src_cpu=%d dst_cpu=%d migrate=%d reason=%s",
+		__entry->comm, __entry->pid, __entry->src_cpu, __entry->dst_cpu,
+		__entry->migrate, __entry->label)
+);
 /*
  * Tracepoint for selecting eco cpu
  */

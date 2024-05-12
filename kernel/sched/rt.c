@@ -158,6 +158,71 @@ static const struct attribute_group frt_group = {
 	.attrs = frt_attrs,
 };
 
+static struct task_struct *pick_highest_pushable_task(struct rq *rq, int cpu);
+static inline int has_pushable_tasks(struct rq *rq);
+
+#define MIN_RUNNABLE_THRESHOLD	(500000)
+static bool frt_short_runnable(struct task_struct *p)
+{
+	return ktime_get_ns() - p->last_waked_ns < MIN_RUNNABLE_THRESHOLD;
+}
+
+static bool frt_sched_runnable(struct rq *rq)
+{
+	return rq->rt.rt_queued > 0;
+}
+
+int frt_idle_pull_tasks(struct rq *dst_rq)
+{
+	struct rq *src_rq;
+	struct task_struct *pulled_task;
+	int cpu, src_cpu = -1, dst_cpu = dst_rq->cpu, ret = 0;
+
+	if (frt_sched_runnable(dst_rq))
+		return 0;
+
+	for_each_possible_cpu(cpu) {
+		if (has_pushable_tasks(cpu_rq(cpu))) {
+			src_cpu = cpu;
+			break;
+		}
+	}
+
+	if (src_cpu == -1)
+		return 0;
+
+	if (src_cpu == dst_cpu)
+		return 0;
+
+	src_rq = cpu_rq(src_cpu);
+	double_lock_balance(dst_rq, src_rq);
+
+	if (frt_sched_runnable(dst_rq))
+		goto out;
+
+	pulled_task = pick_highest_pushable_task(src_rq, dst_cpu);
+	if (!pulled_task)
+		goto out;
+
+	if (frt_short_runnable(pulled_task))
+		goto out;
+
+	deactivate_task(src_rq, pulled_task, 0);
+	pulled_task->on_rq = TASK_ON_RQ_MIGRATING;
+	set_task_cpu(pulled_task, dst_cpu);
+	pulled_task->on_rq = TASK_ON_RQ_QUEUED;
+	activate_task(dst_rq, pulled_task, 0);
+	ret = 1;
+
+out:
+	if (ret)
+		trace_sched_frt_idle_pull_tasks(pulled_task, src_cpu, dst_cpu);
+
+	double_unlock_balance(dst_rq, src_rq);
+
+	return ret;
+}
+
 static int frt_find_prefer_cpu(struct task_struct *task)
 {
 	int cpu, allowed_cpu = 0;

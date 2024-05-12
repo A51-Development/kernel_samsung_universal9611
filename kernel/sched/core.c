@@ -2116,6 +2116,9 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags,
 
 	walt_try_to_wake_up(p);
 
+	if (sched_feat(EXYNOS_MS))
+		update_last_waked_ns_task(p);
+
 	p->sched_contributes_to_load = !!task_contributes_to_load(p);
 	p->state = TASK_WAKING;
 

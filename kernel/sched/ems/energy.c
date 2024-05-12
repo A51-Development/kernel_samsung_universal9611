@@ -8,8 +8,8 @@
 #include <linux/cpufreq.h>
 #include <trace/events/ems.h>
 
-#include "ems.h"
 #include "../sched.h"
+#include "ems.h"
 
 /*
  * The compute capacity, power consumption at this compute capacity and

@@ -7,8 +7,8 @@
 
 #include <trace/events/ems.h>
 
-#include "ems.h"
 #include "../sched.h"
+#include "ems.h"
 
 /*
  * Currently, PCF is composed of a selection algorithm based on distributed

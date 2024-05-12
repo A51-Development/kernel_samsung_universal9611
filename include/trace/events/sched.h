@@ -731,6 +731,33 @@ TRACE_EVENT(sched_fluid_stat,
 		  __entry->util_avg,
 		  __entry->selectby)
 );
+
+TRACE_EVENT(sched_frt_idle_pull_tasks,
+
+	TP_PROTO(struct task_struct *tsk, int src_cpu, int dst_cpu),
+
+	TP_ARGS(tsk, src_cpu, dst_cpu),
+
+	TP_STRUCT__entry(
+		__array( char,	name,	TASK_COMM_LEN	)
+		__field( pid_t,	pid				)
+		__field( int,	src_cpu				)
+		__field( int,	dst_cpu				)
+	),
+
+	TP_fast_assign(
+		memcpy(__entry->name, tsk->comm, TASK_COMM_LEN);
+		__entry->pid			= tsk->pid;
+		__entry->src_cpu		= src_cpu;
+		__entry->dst_cpu		= dst_cpu;
+	),
+	TP_printk("frt: comm=%s pid=%d src_cpu=%d dst_cpu=%d",
+		  __entry->name,
+		  __entry->pid,
+		  __entry->src_cpu,
+		  __entry->dst_cpu)
+);
+
 /*
  * Tracepoint for accounting sched averages for tasks.
  */

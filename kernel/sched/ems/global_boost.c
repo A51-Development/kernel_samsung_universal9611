@@ -11,6 +11,7 @@
 
 #include <trace/events/ems.h>
 
+#include "../sched.h"
 #include "ems.h"
 
 /*

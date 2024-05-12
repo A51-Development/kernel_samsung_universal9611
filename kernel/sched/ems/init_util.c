@@ -6,9 +6,10 @@
  */
 
 #include <linux/sched.h>
+#include <linux/ems.h>
 
-#include "ems.h"
 #include "../sched.h"
+#include "ems.h"
 
 enum {
 	TYPE_BASE_CFS_RQ_UTIL = 0,
@@ -69,6 +70,8 @@ void exynos_init_entity_util_avg(struct sched_entity *se)
 		pr_info("%s: Not support initial util type %ld\n",
 				__func__, init_util_type);
 	}
+
+	update_last_waked_ns_task(task_of(se));
 }
 
 static ssize_t show_initial_util_type(struct kobject *kobj,

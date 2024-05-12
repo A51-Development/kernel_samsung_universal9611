@@ -12,8 +12,8 @@
 #include <linux/sched/signal.h>
 #include <trace/events/ems.h>
 
-#include "ems.h"
 #include "../sched.h"
+#include "ems.h"
 
 static struct task_band *lookup_band(struct task_struct *p)
 {

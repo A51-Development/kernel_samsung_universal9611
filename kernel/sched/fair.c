@@ -10845,6 +10845,11 @@ update_next_balance(struct sched_domain *sd, unsigned long *next_balance)
  * idle_balance is called by schedule() if this_cpu is about to become
  * idle. Attempts to pull tasks from other CPUs.
  */
+#ifdef CONFIG_SCHED_EMS
+extern void lb_newidle_balance(struct rq *dst_rq, struct rq_flags *rf,
+				int *pulled_task, struct sched_domain *sd);
+#endif
+
 static int idle_balance(struct rq *this_rq, struct rq_flags *rf)
 {
 	unsigned long next_balance = jiffies + HZ;
@@ -10852,6 +10857,12 @@ static int idle_balance(struct rq *this_rq, struct rq_flags *rf)
 	struct sched_domain *sd;
 	int pulled_task = 0;
 	u64 curr_cost = 0;
+
+	if (sched_feat(EXYNOS_MS)) {
+		lb_newidle_balance(this_rq, rf, &pulled_task, sd);
+		if (pulled_task)
+			return pulled_task;
+	}
 
 	/*
 	 * We must set idle_stamp _before_ calling idle_balance(), such that we
