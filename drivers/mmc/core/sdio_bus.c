@@ -268,13 +268,7 @@ static void sdio_release_func(struct device *dev)
 {
 	struct sdio_func *func = dev_to_sdio_func(dev);
 
-#ifdef CONFIG_MMC_EMBEDDED_SDIO
-	/*
-	 * If this device is embedded then we never allocated
-	 * cis tables for this func
-	 */
-	if (!func->card->host->embedded_sdio_data.funcs)
-#endif
+	if (!(func->card->quirks & MMC_QUIRK_NONSTD_SDIO))
 		sdio_free_func_cis(func);
 
 	kfree(func->info);
