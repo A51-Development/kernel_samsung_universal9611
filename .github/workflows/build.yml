@@ -1,0 +1,40 @@
+name: Build kernel
+
+on:
+  push:
+    branches:
+      Grass-Unified
+  pull_request:
+    branches:
+      Grass-Unified
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+
+    name: "Building kernel"
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3.5.3
+        with:
+          fetch-depth: 1
+
+      - name: Install packages & setup
+        run: |
+          sudo apt update
+          bash <(curl https://gist.githubusercontent.com/Royna2544/0feeeb35a6d1782b186990ff2a0b3657/raw/b170134a94dac3594df506716bc7b802add2724b/setup.sh)
+          sudo apt install bison flex libssl-dev
+          cp local.config.sample local.config
+          echo "OBJ=arch/arm64/boot/Image" >> local.config
+      - name: Run build
+        run: |
+          DEVICE=a51 bash build_kernel.sh aosp ksu
+      - name: Upload kernel
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: Image
+          path: out/arch/arm64/boot/Image
+
