@@ -931,6 +931,7 @@ kpti_install_ng_mappings(const struct arm64_cpu_capabilities *__unused)
 
 	if (__this_cpu_read(this_cpu_vector) == vectors) {
 		const char *v = arm64_get_bp_hardening_vector(EL1_VECTOR_KPTI);
+
 		__this_cpu_write(this_cpu_vector, v);
 	}
 
