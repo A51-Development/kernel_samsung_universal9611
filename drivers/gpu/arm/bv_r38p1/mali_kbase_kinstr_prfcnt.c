@@ -1170,6 +1170,11 @@ void kbasep_kinstr_prfcnt_client_destroy(struct kbase_kinstr_prfcnt_client *cli)
 {
 	if (!cli)
 		return;
+	/* If virtualizer_client is already setup, the client is in working order.
+	 * One needs to ensure there is no aync dump actions inflight.
+	 */
+	if (cli->hvcli)
+		flush_work(&cli->async.dump_work);
 
 	kbase_hwcnt_virtualizer_client_destroy(cli->hvcli);
 	kbasep_kinstr_prfcnt_sample_array_free(&cli->sample_arr);
